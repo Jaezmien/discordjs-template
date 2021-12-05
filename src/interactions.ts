@@ -21,14 +21,24 @@ dotenv.config()
 	try {
 		console.log('Started refreshing application (/) commands.')
 
-		await rest.put(
-			Routes.applicationGuildCommands(
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				process.env.CLIENT_ID!,
-				process.env.TEST_GUILD_ID!
-			),
-			{ body: interactions }
-		)
+		if (process.argv.includes('--global')) {
+			await rest.put(
+				Routes.applicationCommands(
+					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+					process.env.CLIENT_ID!
+				),
+				{ body: interactions }
+			)
+		} else {
+			await rest.put(
+				Routes.applicationGuildCommands(
+					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+					process.env.CLIENT_ID!,
+					process.env.TEST_GUILD_ID!
+				),
+				{ body: interactions }
+			)
+		}
 
 		console.log('Successfully reloaded application (/) commands.')
 	} catch (error) {
