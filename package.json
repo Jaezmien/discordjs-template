@@ -21,6 +21,7 @@
     "dev": "tsc -w",
     "build": "tsc",
     "build:start": "tsc && node build/index.js",
+	"start": "node build/index.js",
     "interaction:build": "node build/interaction.builder.js",
 	"interaction:build:all": "node build/interactions.builder.js --global"
   }

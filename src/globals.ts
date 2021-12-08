@@ -1,31 +1,48 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
-import { ButtonInteraction, CacheType, Client, CommandInteraction, Message, SelectMenuInteraction } from 'discord.js'
+import Collection from '@discordjs/collection'
+import {
+	ButtonInteraction,
+	CacheType,
+	Client,
+	CommandInteraction,
+	Message,
+	MessageReaction,
+	SelectMenuInteraction,
+	Snowflake,
+	User,
+} from 'discord.js'
 
-export interface ICommandHandlerParameters {
+interface IBaseCommandHandler {
 	client: Client
+}
+export interface ICommandHandlerParameters extends IBaseCommandHandler {
 	interaction: CommandInteraction<CacheType>
 }
-export interface IButtonHandler {
-	client: Client
+export interface IButtonHandler extends IBaseCommandHandler {
 	interaction: ButtonInteraction<CacheType>
 }
-export interface IMenuHandler {
-	client: Client
+export interface IMenuHandler extends IBaseCommandHandler {
 	interaction: SelectMenuInteraction<CacheType>
 }
+export interface IMessageHandler extends IBaseCommandHandler {
+	message: Message
+}
+export interface IMessageEditHandler extends IMessageHandler {
+	old_message: Message
+}
+export interface IMessageReactHandler extends IBaseCommandHandler {
+	reaction: MessageReaction
+	user: User
+}
+export interface IMessageReactRemoveBulkHandler extends IBaseCommandHandler {
+	message: Message
+	reactions: Collection<string | Snowflake, MessageReaction>
+}
+
 export interface ICommandHandler {
 	Command: (params: ICommandHandlerParameters) => void
 }
 export interface ICommand {
 	Builder: SlashCommandBuilder
 	Handler: ICommandHandler
-}
-export interface IMessageHandler {
-	client: Client
-	message: Message
-}
-
-type IWaterfallFunction<T> = (item: T, next: IWaterfallFunction<T>) => void
-export interface IWaterfall<T> {
-	Execute: IWaterfallFunction<T>
 }

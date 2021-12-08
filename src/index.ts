@@ -1,4 +1,4 @@
-import { Client, Intents } from 'discord.js'
+import { Client, Intents, MessageReaction } from 'discord.js'
 import fs from 'fs'
 import dotenv from 'dotenv'
 import path from 'path/posix'
@@ -10,15 +10,43 @@ import ButtonHandler from './interaction.button'
 import MenuHandler from './interaction.menu'
 
 const client = new Client({
-	intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+	intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS],
+	partials: ['MESSAGE', 'REACTION'],
 })
 
 //
 
 ;(async () => {
-	console.log('🔃 Loading message handler...')
+	console.log('🔃 Loading message handlers...')
+
 	client.on('messageCreate', (message) => {
-		MessageHandler({ client, message })
+		MessageHandler.onCreate({ client, message })
+	})
+	client.on('messageUpdate', async (old_message, message) => {
+		const o = old_message.partial ? await old_message.fetch() : old_message
+		const m = message.partial ? await message.fetch() : message
+		MessageHandler.onEdit({ client, old_message: o, message: m })
+	})
+	client.on('messageDelete', async (message) => {
+		const m = message.partial ? await message.fetch() : message
+		MessageHandler.onDestroy({ client, message: m })
+	})
+
+	client.on('messageReactionAdd', async (reaction, user) => {
+		const r = reaction.partial ? await reaction.fetch() : reaction
+		const u = user.partial ? await user.fetch() : user
+		MessageHandler.onReactionCreate({ client, reaction: r, user: u })
+	})
+	client.on('messageReactionRemove', async (reaction, user) => {
+		const r = reaction.partial ? await reaction.fetch() : reaction
+		const u = user.partial ? await user.fetch() : user
+		MessageHandler.onReactionRemove({ client, reaction: r, user: u })
+	})
+	client.on('messageReactionRemoveAll', async (message, reactions) => {
+		const m = message.partial ? await message.fetch() : message
+		const r = new Collection<string, MessageReaction>()
+		reactions.forEach((v, k) => r.set(k, v))
+		MessageHandler.onReactionRemoveBulk({ client, message: m, reactions: r })
 	})
 })()
 
@@ -65,20 +93,11 @@ const client = new Client({
 				return
 			}
 
-			interactions.get(commandName)!.Command({
-				client,
-				interaction: i,
-			})
+			interactions.get(commandName)!.Command({ client, interaction: i })
 		} else if (i.isButton()) {
-			ButtonHandler({
-				client,
-				interaction: i,
-			})
+			ButtonHandler({ client, interaction: i })
 		} else if (i.isSelectMenu()) {
-			MenuHandler({
-				client,
-				interaction: i,
-			})
+			MenuHandler({ client, interaction: i })
 		}
 	})
 })()
