@@ -20,6 +20,7 @@ const client = new Client({
 	console.log('🔃 Loading message handlers...')
 
 	client.on('messageCreate', (message) => {
+		if (!message) return
 		MessageHandler.onCreate({ client, message })
 	})
 	client.on('messageUpdate', async (old_message, message) => {
