@@ -8,6 +8,7 @@ import {
 	Message,
 	MessageReaction,
 	SelectMenuInteraction,
+	ContextMenuInteraction,
 	Snowflake,
 	User,
 } from 'discord.js'
@@ -21,8 +22,11 @@ export interface ICommandHandlerParameters extends IBaseCommandHandler {
 export interface IButtonHandler extends IBaseCommandHandler {
 	interaction: ButtonInteraction<CacheType>
 }
-export interface IMenuHandler extends IBaseCommandHandler {
+export interface ISelectionHandler extends IBaseCommandHandler {
 	interaction: SelectMenuInteraction<CacheType>
+}
+export interface IMenuHandler extends IBaseCommandHandler {
+	interaction: ContextMenuInteraction<CacheType>
 }
 export interface IMessageHandler extends IBaseCommandHandler {
 	message: Message

@@ -7,6 +7,7 @@ import { ICommandHandler } from './globals'
 import Collection from '@discordjs/collection'
 import MessageHandler from './message'
 import ButtonHandler from './interaction.button'
+import SelectionHandler from './interaction.selection'
 import MenuHandler from './interaction.menu'
 
 const client = new Client({
@@ -98,6 +99,8 @@ const client = new Client({
 		} else if (i.isButton()) {
 			ButtonHandler({ client, interaction: i })
 		} else if (i.isSelectMenu()) {
+			SelectionHandler({ client, interaction: i })
+		} else if (i.isContextMenu()) {
 			MenuHandler({ client, interaction: i })
 		}
 	})
