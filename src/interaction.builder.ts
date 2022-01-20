@@ -42,7 +42,6 @@ async function crawl_sub_command(
 
 ;(async () => {
 	let interactions = []
-	console.log('Loading local commands...')
 	for (const paths of ['commands/', 'menus/']) {
 		const commandPath = path.join(__dirname, paths)
 		for (const file of fs.readdirSync(commandPath)) {
@@ -56,7 +55,7 @@ async function crawl_sub_command(
 					await crawl_sub_command(commandPath, file, Builder)
 					interactions.push(Builder)
 				} else {
-					const { Builder } = await import(commandPath + file)
+					const { Builder }: { Builder: SlashCommandBuilder } = await import(commandPath + file)
 					Builder.setName(path.basename(file, path.extname(file)))
 					interactions.push(Builder)
 				}
@@ -69,9 +68,7 @@ async function crawl_sub_command(
 
 	const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN!)
 	interactions = interactions.map((i) => i.toJSON())
-	console.log(interactions)
 	try {
-		console.log('Updating commands...')
 		if (process.argv.includes('--global')) {
 			await rest.put(Routes.applicationCommands(process.env.CLIENT_ID!), {
 				body: interactions,
