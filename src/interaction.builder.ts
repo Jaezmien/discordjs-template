@@ -90,7 +90,7 @@ async function crawl_sub_command(
 		await commands.fetch({})
 
 		console.log('Removing unused interactions...')
-		const unused = commands.cache.filter((val) => interactions.find((i) => i.name === val.name))
+		const unused = commands.cache.filter((val) => !interactions.find((i) => i.name === val.name))
 
 		for (const key of Array.from(unused.keys())) {
 			const cmd = unused.get(key)
@@ -134,4 +134,6 @@ async function crawl_sub_command(
 		console.error(error)
 		console.log(interactions)
 	}
+
+	client.destroy()
 })()
