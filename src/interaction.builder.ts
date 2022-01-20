@@ -89,6 +89,7 @@ async function crawl_sub_command(
 
 		await commands.fetch({})
 
+		console.log('Removing unused interactions...')
 		const unused = commands.cache.filter((val) => interactions.find((i) => i.name === val.name))
 
 		for (const key of Array.from(unused.keys())) {
@@ -97,6 +98,8 @@ async function crawl_sub_command(
 				console.error(key + ' is undefined')
 				return
 			}
+
+			console.log('Removing ' + cmd.name)
 
 			try {
 				if (process.argv.includes('--global')) {
@@ -115,6 +118,7 @@ async function crawl_sub_command(
 		}
 	}
 
+	console.log('Updating interactions...')
 	interactions = interactions.map((i) => i.toJSON())
 	try {
 		if (process.argv.includes('--global')) {
