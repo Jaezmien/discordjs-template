@@ -8,9 +8,15 @@ import { REST } from '@discordjs/rest'
 import { Routes } from 'discord-api-types/v9'
 import fs from 'fs'
 import dotenv from 'dotenv'
+import { Client, Intents } from 'discord.js'
 dotenv.config()
 
+const client = new Client({ intents: [Intents.FLAGS.GUILDS] })
 const expectedExtension = path.extname(__filename)
+const timeout = (secs: number) =>
+	new Promise<void>((res) => {
+		setTimeout(res, secs * 1000)
+	})
 
 async function crawl_sub_command(
 	commandPath: string,
@@ -41,7 +47,7 @@ async function crawl_sub_command(
 }
 
 ;(async () => {
-	let interactions = []
+	let interactions: any[] = []
 	for (const paths of ['commands/', 'menus/']) {
 		const commandPath = path.join(__dirname, paths)
 		for (const file of fs.readdirSync(commandPath)) {
@@ -67,6 +73,47 @@ async function crawl_sub_command(
 	}
 
 	const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN!)
+
+	// Delete unused interactions
+	{
+		console.log('Logging in...')
+		await client.login(process.env.BOT_TOKEN!)
+
+		console.log('Fetching server commands...')
+		const commands = process.argv.includes('--global')
+			? client.application?.commands
+			: (await client.guilds.fetch(process.env.TEST_GUILD_ID!))?.commands
+
+		if (!commands) throw Error('Commands is undefined')
+
+		await commands.fetch({})
+
+		const unused = commands.cache.filter((val) => interactions.find((i) => i.name === val.name))
+
+		for (const key of Array.from(unused.keys())) {
+			const cmd = unused.get(key)
+			if (!cmd) {
+				console.error(key + ' is undefined')
+				return
+			}
+
+			try {
+				if (process.argv.includes('--global')) {
+					await rest.delete(Routes.applicationCommand(process.env.CLIENT_ID!, cmd.id))
+				} else {
+					await rest.delete(
+						Routes.applicationGuildCommand(process.env.CLIENT_ID!, process.env.TEST_GUILD_ID!, cmd.id)
+					)
+				}
+			} catch (error) {
+				console.error(error)
+				return
+			}
+
+			await timeout(2.5)
+		}
+	}
+
 	interactions = interactions.map((i) => i.toJSON())
 	try {
 		if (process.argv.includes('--global')) {
