@@ -1,7 +1,6 @@
 import { SlashCommandSubcommandBuilder } from '@discordjs/builders'
-import { ChannelType } from 'discord-api-types'
 import { GuildChannel } from 'discord.js'
-import { ICommandHandler } from 'src/globals'
+import { ICommandHandler } from '../../globals'
 
 const Builder = new SlashCommandSubcommandBuilder().setDescription('Information about a channel')
 Builder.addChannelOption((option) =>
@@ -9,7 +8,7 @@ Builder.addChannelOption((option) =>
 )
 
 const Handler: ICommandHandler = {
-	Command({ client, interaction }) {
+	async Command({ client, interaction }) {
 		const channel = (interaction.options.getChannel('channel') ?? interaction.channel) as GuildChannel
 		if (!channel) {
 			interaction.reply({

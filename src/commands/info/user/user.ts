@@ -1,6 +1,6 @@
 import { SlashCommandSubcommandBuilder } from '@discordjs/builders'
 import { GuildMember } from 'discord.js'
-import { ICommandHandler } from 'src/globals'
+import { ICommandHandler } from '../../../globals'
 
 const Builder = new SlashCommandSubcommandBuilder()
 	.setDescription('Information about someone else')

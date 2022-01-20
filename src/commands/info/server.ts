@@ -1,5 +1,5 @@
 import { SlashCommandSubcommandBuilder } from '@discordjs/builders'
-import { ICommandHandler } from 'src/globals'
+import { ICommandHandler } from '../../globals'
 
 const Builder = new SlashCommandSubcommandBuilder().setDescription('Information about the server')
 

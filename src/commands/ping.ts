@@ -1,12 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
-import { CommandInteraction } from 'discord.js'
-import { ICommandHandler } from 'src/globals'
+import { get_timestamp, ICommandHandler } from '../globals'
 
 const Builder = new SlashCommandBuilder().setDescription('Pings the bot')
-
-function get_timestamp(i: CommandInteraction, discord_epoch = true): Date {
-	return new Date(+i.id / 4194304 + (discord_epoch ? 1420070400000 : 0))
-}
 
 const Handler: ICommandHandler = {
 	Command({ client, interaction }) {

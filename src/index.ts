@@ -3,105 +3,130 @@ import fs from 'fs'
 import dotenv from 'dotenv'
 import path from 'path/posix'
 dotenv.config()
-import { ICommandHandler } from './globals'
+import { create_user_error, ICommandHandler, IMenuHandler, initialize_folders } from './globals'
 import Collection from '@discordjs/collection'
 import MessageHandler from './message'
 import ButtonHandler from './interaction.button'
 import SelectionHandler from './interaction.selection'
-import MenuHandler from './interaction.menu'
 
 const client = new Client({
 	intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS],
-	partials: ['MESSAGE', 'REACTION'],
+	// partials: ['MESSAGE', 'REACTION'],
 })
 
-//
+initialize_folders()
 
-;(async () => {
+//
+{
 	console.log('🔃 Loading message handlers...')
 
-	client.on('messageCreate', (message) => {
+	client.on('messageCreate', async (message) => {
 		if (!message) return
-		MessageHandler.onCreate({ client, message })
+		await MessageHandler.onCreate({ client, message })
 	})
 	client.on('messageUpdate', async (old_message, message) => {
 		const o = old_message.partial ? await old_message.fetch() : old_message
 		const m = message.partial ? await message.fetch() : message
-		MessageHandler.onEdit({ client, old_message: o, message: m })
+		await MessageHandler.onEdit({ client, old_message: o, message: m })
 	})
 	client.on('messageDelete', async (message) => {
 		const m = message.partial ? await message.fetch() : message
-		MessageHandler.onDestroy({ client, message: m })
+		await MessageHandler.onDestroy({ client, message: m })
 	})
 
 	client.on('messageReactionAdd', async (reaction, user) => {
 		const r = reaction.partial ? await reaction.fetch() : reaction
 		const u = user.partial ? await user.fetch() : user
-		MessageHandler.onReactionCreate({ client, reaction: r, user: u })
+		await MessageHandler.onReactionCreate({ client, reaction: r, user: u })
 	})
 	client.on('messageReactionRemove', async (reaction, user) => {
 		const r = reaction.partial ? await reaction.fetch() : reaction
 		const u = user.partial ? await user.fetch() : user
-		MessageHandler.onReactionRemove({ client, reaction: r, user: u })
+		await MessageHandler.onReactionRemove({ client, reaction: r, user: u })
 	})
 	client.on('messageReactionRemoveAll', async (message, reactions) => {
 		const m = message.partial ? await message.fetch() : message
 		const r = new Collection<string, MessageReaction>()
 		reactions.forEach((v, k) => r.set(k, v))
-		MessageHandler.onReactionRemoveBulk({ client, message: m, reactions: r })
+		await MessageHandler.onReactionRemoveBulk({ client, message: m, reactions: r })
 	})
-})()
+}
 
 //
 ;(async () => {
 	console.log('🔃 Loading interaction handlers...')
-	const interactions = new Collection<string, ICommandHandler>()
-	const commandPath = path.join(__dirname, 'commands/')
-	for (const file of fs.readdirSync(commandPath)) {
-		if (!path.extname(file)) {
-			for (const subFile of fs.readdirSync(commandPath + file)) {
-				if (path.basename(subFile, path.extname(subFile)) === '[index]') continue
-				if (!path.extname(subFile)) {
-					for (const subSubFile of fs.readdirSync(commandPath + file + '/' + subFile)) {
-						if (path.basename(subSubFile, path.extname(subSubFile)) === '[index]') continue
-						const { Handler } = await import(commandPath + file + '/' + subFile + '/' + subSubFile)
-						interactions.set(
-							file + ' ' + subFile + ' ' + path.basename(subSubFile, path.extname(subSubFile)),
-							Handler
-						)
+	const slashInteractions = new Collection<string, ICommandHandler>()
+	const menuInteractions = new Collection<string, IMenuHandler>()
+
+	// Slash
+	{
+		const commandPath = path.join(__dirname, 'commands/')
+		for (const file of fs.readdirSync(commandPath)) {
+			if (!path.extname(file)) {
+				for (const subFile of fs.readdirSync(commandPath + file)) {
+					if (path.basename(subFile, path.extname(subFile)) === '[index]') continue
+					if (!path.extname(subFile)) {
+						for (const subSubFile of fs.readdirSync(commandPath + file + '/' + subFile)) {
+							if (path.basename(subSubFile, path.extname(subSubFile)) === '[index]') continue
+							const { Handler } = await import(commandPath + file + '/' + subFile + '/' + subSubFile)
+							slashInteractions.set(
+								file + ' ' + subFile + ' ' + path.basename(subSubFile, path.extname(subSubFile)),
+								Handler
+							)
+						}
+					} else {
+						const { Handler } = await import(commandPath + file + '/' + subFile)
+						slashInteractions.set(file + ' ' + path.basename(subFile, path.extname(subFile)), Handler)
 					}
-				} else {
-					const { Handler } = await import(commandPath + file + '/' + subFile)
-					interactions.set(file + ' ' + path.basename(subFile, path.extname(subFile)), Handler)
 				}
+			} else {
+				const { Handler } = await import(commandPath + file)
+				slashInteractions.set(path.basename(file, path.extname(file)), Handler)
 			}
-		} else {
-			const { Handler } = await import(commandPath + file)
-			interactions.set(path.basename(file, path.extname(file)), Handler)
 		}
 	}
-	client.on('interactionCreate', (i) => {
+	// Menu
+	{
+		const commandPath = path.join(__dirname, 'menus/')
+		for (const file of fs.readdirSync(commandPath)) {
+			const { Handler } = await import(commandPath + file)
+			menuInteractions.set(path.basename(file, path.extname(file)), Handler)
+		}
+	}
+
+	client.on('interactionCreate', async (i) => {
 		if (i.isCommand()) {
 			const commandName = [i.commandName, i.options.getSubcommandGroup(false), i.options.getSubcommand(false)]
 				.filter((x) => x?.trim())
 				.join(' ')
 				.replace(/\\n/, '\n')
 				.trim()
-			if (!interactions.get(commandName)) {
-				i.reply({
-					content: `Could not find a handler for the command: \`${commandName}\``,
+			if (!slashInteractions.get(commandName)) {
+				const msg = create_user_error(`Could not find a slash handler for the command: \`${commandName}\``)
+				await i.reply({
+					content: msg,
 					ephemeral: true,
 				})
 				return
 			}
 
-			interactions.get(commandName)!.Command({ client, interaction: i })
+			await slashInteractions.get(commandName)!.Command({ client, interaction: i })
 		} else if (i.isButton()) {
-			ButtonHandler({ client, interaction: i })
+			await ButtonHandler({ client, interaction: i })
 		} else if (i.isSelectMenu()) {
-			SelectionHandler({ client, interaction: i })
+			await SelectionHandler({ client, interaction: i })
 		} else if (i.isContextMenu()) {
-			MenuHandler({ client, interaction: i })
+			const commandName = i.commandName
+			if (!menuInteractions.get(commandName)) {
+				const msg = create_user_error(`Could not find a menu handler for the command: \`${commandName}\``)
+				await i.reply({
+					content: msg,
+					ephemeral: true,
+				})
+				return
+			}
+
+			await menuInteractions.get(commandName)!.Command({ client, interaction: i })
 		}
 	})
 })()

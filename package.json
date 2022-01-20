@@ -1,28 +1,31 @@
 {
-  "name": "my-discord-bot",
-  "version": "1.0.0",
-  "main": "build/index.js",
-  "license": "MIT",
-  "dependencies": {
-    "@discordjs/builders": "0.7.0",
-    "@discordjs/rest": "^0.1.0-canary.0",
-    "discord-api-types": "^0.25.2",
-    "discord.js": "^13.3.1",
-    "dotenv": "^10.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^16.11.11",
-    "@typescript-eslint/eslint-plugin": "^5.5.0",
-    "@typescript-eslint/parser": "^5.5.0",
-    "eslint": "^8.3.0",
-    "typescript": "^4.5.2"
-  },
-  "scripts": {
-    "dev": "tsc -w",
-    "build": "tsc",
-    "build:start": "tsc && node build/index.js",
-	"start": "node build/index.js",
-    "interaction:build": "node build/interaction.builder.js",
-	"interaction:build:all": "node build/interactions.builder.js --global"
-  }
+	"name": "my-discord-bot",
+	"version": "1.0.0",
+	"main": "build/index.js",
+	"license": "MIT",
+	"dependencies": {
+		"@discordjs/builders": "0.7.0",
+		"@discordjs/rest": "^0.1.0-canary.0",
+		"discord-api-types": "^0.25.2",
+		"discord.js": "^13.3.1",
+		"dotenv": "^10.0.0",
+		"nanoid": "^3.2.0"
+	},
+	"devDependencies": {
+		"@types/node": "^16.11.11",
+		"@typescript-eslint/eslint-plugin": "^5.5.0",
+		"@typescript-eslint/parser": "^5.5.0",
+		"eslint": "^8.3.0",
+		"typescript": "^4.5.2"
+	},
+	"scripts": {
+		"dev": "tsc -w",
+		"build": "tsc",
+		"build:start": "tsc && node build/index.js",
+		"start": "node build/index.js",
+		"interaction:build": "node build/interaction.builder.js",
+		"interaction:build:all": "node build/interaction.builder.js --global",
+		"permission:build": "node build/interaction.permission.builder.js",
+		"permission:build:all": "node build/interaction.permission.builder.js --global"
+	}
 }

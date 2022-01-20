@@ -10,15 +10,14 @@ import fs from 'fs'
 import dotenv from 'dotenv'
 dotenv.config()
 
-const commandPath = path.join(__dirname, 'commands/')
 const expectedExtension = path.extname(__filename)
 
 async function crawl_sub_command(
+	commandPath: string,
 	fullPath: string,
 	builder: SlashCommandBuilder | SlashCommandSubcommandGroupBuilder,
 	once: boolean = false
 ) {
-	const baseFile = path.basename(fullPath, path.extname(fullPath))
 	for (const file of fs.readdirSync(commandPath + fullPath)) {
 		if (path.basename(file, path.extname(file)) === '[index]') continue
 		if (!path.extname(file)) {
@@ -29,7 +28,7 @@ async function crawl_sub_command(
 				await import(`${commandPath}${fullPath}/${file}/[index]${expectedExtension}`)
 			).default
 			Builder.setName(file)
-			await crawl_sub_command(`${fullPath}/${file}`, Builder, true)
+			await crawl_sub_command(commandPath, `${fullPath}/${file}`, Builder, true)
 			;(builder as SlashCommandBuilder).addSubcommandGroup(Builder)
 		} else {
 			const { Builder }: { Builder: SlashCommandSubcommandBuilder } = await import(
@@ -43,28 +42,36 @@ async function crawl_sub_command(
 
 ;(async () => {
 	let interactions = []
-	for (const file of fs.readdirSync(commandPath)) {
-		try {
-			if (!path.extname(file)) {
-				if (!fs.existsSync(`${commandPath}${file}/[index]${expectedExtension}`))
-					throw 'Invalid interaction subcommand!'
-				const Builder = (await import(`${commandPath}${file}/[index]${expectedExtension}`)).default
-				Builder.setName(file)
-				await crawl_sub_command(file, Builder)
-				interactions.push(Builder)
-			} else {
-				const { Builder }: { Builder: SlashCommandBuilder } = await import(commandPath + file)
-				Builder.setName(path.basename(file, path.extname(file)))
-				interactions.push(Builder)
+	console.log('Loading local commands...')
+	for (const paths of ['commands/', 'menus/']) {
+		const commandPath = path.join(__dirname, paths)
+		for (const file of fs.readdirSync(commandPath)) {
+			try {
+				if (!path.extname(file)) {
+					if (paths === 'menus/') throw 'Cannot create subcommand for context menus'
+					if (!fs.existsSync(`${commandPath}${file}/[index]${expectedExtension}`))
+						throw 'Invalid interaction subcommand'
+					const Builder = (await import(`${commandPath}${file}/[index]${expectedExtension}`)).default
+					Builder.setName(file)
+					await crawl_sub_command(commandPath, file, Builder)
+					interactions.push(Builder)
+				} else {
+					const { Builder } = await import(commandPath + file)
+					Builder.setName(path.basename(file, path.extname(file)))
+					interactions.push(Builder)
+				}
+			} catch (err) {
+				console.error('Error while trying to load ' + file)
+				console.error(err)
 			}
-		} catch (err) {
-			console.error('Error while trying to load ' + file)
-			console.error(err)
 		}
 	}
+
 	const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN!)
 	interactions = interactions.map((i) => i.toJSON())
+	console.log(interactions)
 	try {
+		console.log('Updating commands...')
 		if (process.argv.includes('--global')) {
 			await rest.put(Routes.applicationCommands(process.env.CLIENT_ID!), {
 				body: interactions,
@@ -76,5 +83,6 @@ async function crawl_sub_command(
 		}
 	} catch (error) {
 		console.error(error)
+		console.log(interactions)
 	}
 })()
