@@ -72,7 +72,7 @@ export interface ICommand {
 	Permissions?: IPermission[]
 }
 export interface ICommandHandler {
-	Command: (params: ICommandHandlerParameters) => Awaitable<void>
+	Command: (params: ICommandHandlerParameters) => Awaitable<any>
 }
 export interface IMenu {
 	Builder: ContextMenuCommandBuilder
@@ -80,7 +80,7 @@ export interface IMenu {
 	Permissions?: IPermission[]
 }
 export interface IMenuHandler {
-	Command: (params: IMenuHandlerParameters) => Awaitable<void>
+	Command: (params: IMenuHandlerParameters) => Awaitable<any>
 }
 
 export function initialize_folders() {
