@@ -50,6 +50,7 @@ async function crawl_sub_command(
 	let interactions: any[] = []
 	for (const paths of ['commands/', 'menus/']) {
 		const commandPath = path.join(__dirname, paths)
+		if (!fs.existsSync(commandPath)) continue
 		for (const file of fs.readdirSync(commandPath)) {
 			try {
 				if (!path.extname(file)) {

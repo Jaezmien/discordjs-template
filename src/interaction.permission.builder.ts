@@ -15,6 +15,7 @@ const expectedExtension = path.extname(__filename)
 	console.log('Loading local commands...')
 	for (const paths of ['commands/', 'menus/']) {
 		const commandPath = path.join(__dirname, paths)
+		if (!fs.existsSync(commandPath)) continue
 		for (const file of fs.readdirSync(commandPath)) {
 			try {
 				if (!path.extname(file)) {

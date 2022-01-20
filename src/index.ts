@@ -61,36 +61,40 @@ initialize_folders()
 	// Slash
 	{
 		const commandPath = path.join(__dirname, 'commands/')
-		for (const file of fs.readdirSync(commandPath)) {
-			if (!path.extname(file)) {
-				for (const subFile of fs.readdirSync(commandPath + file)) {
-					if (path.basename(subFile, path.extname(subFile)) === '[index]') continue
-					if (!path.extname(subFile)) {
-						for (const subSubFile of fs.readdirSync(commandPath + file + '/' + subFile)) {
-							if (path.basename(subSubFile, path.extname(subSubFile)) === '[index]') continue
-							const { Handler } = await import(commandPath + file + '/' + subFile + '/' + subSubFile)
-							slashInteractions.set(
-								file + ' ' + subFile + ' ' + path.basename(subSubFile, path.extname(subSubFile)),
-								Handler
-							)
+		if (fs.existsSync(commandPath)) {
+			for (const file of fs.readdirSync(commandPath)) {
+				if (!path.extname(file)) {
+					for (const subFile of fs.readdirSync(commandPath + file)) {
+						if (path.basename(subFile, path.extname(subFile)) === '[index]') continue
+						if (!path.extname(subFile)) {
+							for (const subSubFile of fs.readdirSync(commandPath + file + '/' + subFile)) {
+								if (path.basename(subSubFile, path.extname(subSubFile)) === '[index]') continue
+								const { Handler } = await import(commandPath + file + '/' + subFile + '/' + subSubFile)
+								slashInteractions.set(
+									file + ' ' + subFile + ' ' + path.basename(subSubFile, path.extname(subSubFile)),
+									Handler
+								)
+							}
+						} else {
+							const { Handler } = await import(commandPath + file + '/' + subFile)
+							slashInteractions.set(file + ' ' + path.basename(subFile, path.extname(subFile)), Handler)
 						}
-					} else {
-						const { Handler } = await import(commandPath + file + '/' + subFile)
-						slashInteractions.set(file + ' ' + path.basename(subFile, path.extname(subFile)), Handler)
 					}
+				} else {
+					const { Handler } = await import(commandPath + file)
+					slashInteractions.set(path.basename(file, path.extname(file)), Handler)
 				}
-			} else {
-				const { Handler } = await import(commandPath + file)
-				slashInteractions.set(path.basename(file, path.extname(file)), Handler)
 			}
 		}
 	}
 	// Menu
 	{
 		const commandPath = path.join(__dirname, 'menus/')
-		for (const file of fs.readdirSync(commandPath)) {
-			const { Handler } = await import(commandPath + file)
-			menuInteractions.set(path.basename(file, path.extname(file)), Handler)
+		if (fs.existsSync(commandPath)) {
+			for (const file of fs.readdirSync(commandPath)) {
+				const { Handler } = await import(commandPath + file)
+				menuInteractions.set(path.basename(file, path.extname(file)), Handler)
+			}
 		}
 	}
 
