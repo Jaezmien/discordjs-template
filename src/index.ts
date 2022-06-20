@@ -25,26 +25,31 @@ initialize_folders()
 		await MessageHandler.onCreate({ client, message })
 	})
 	client.on('messageUpdate', async (old_message, message) => {
+		if (!old_message || !message) return
 		const o = old_message.partial ? await old_message.fetch() : old_message
 		const m = message.partial ? await message.fetch() : message
 		await MessageHandler.onEdit({ client, old_message: o, message: m })
 	})
 	client.on('messageDelete', async (message) => {
+		if (!message) return
 		const m = message.partial ? await message.fetch() : message
 		await MessageHandler.onDestroy({ client, message: m })
 	})
 
 	client.on('messageReactionAdd', async (reaction, user) => {
+		if (!reaction || !user) return
 		const r = reaction.partial ? await reaction.fetch() : reaction
 		const u = user.partial ? await user.fetch() : user
 		await MessageHandler.onReactionCreate({ client, reaction: r, user: u })
 	})
 	client.on('messageReactionRemove', async (reaction, user) => {
+		if (!reaction || !user) return
 		const r = reaction.partial ? await reaction.fetch() : reaction
 		const u = user.partial ? await user.fetch() : user
 		await MessageHandler.onReactionRemove({ client, reaction: r, user: u })
 	})
 	client.on('messageReactionRemoveAll', async (message, reactions) => {
+		if (!message || !reactions) return
 		const m = message.partial ? await message.fetch() : message
 		const r = new Collection<string, MessageReaction>()
 		reactions.forEach((v, k) => r.set(k, v))
@@ -99,6 +104,8 @@ initialize_folders()
 	}
 
 	client.on('interactionCreate', async (i) => {
+		if (!i) return
+
 		if (i.isCommand()) {
 			const commandName = [i.commandName, i.options.getSubcommandGroup(false), i.options.getSubcommand(false)]
 				.filter((x) => x?.trim())
