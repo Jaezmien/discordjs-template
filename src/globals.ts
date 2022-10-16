@@ -3,9 +3,9 @@ import {
 	AutocompleteInteraction,
 	ButtonInteraction,
 	CacheType,
+	ChatInputCommandInteraction,
 	Client,
 	Collection,
-	CommandInteraction,
 	ContextMenuCommandInteraction,
 	Interaction,
 	Message,
@@ -36,7 +36,7 @@ interface IBaseCommandHandler {
 	client: Client
 }
 export interface ICommandHandlerParameters extends IBaseCommandHandler {
-	interaction: CommandInteraction<CacheType>
+	interaction: ChatInputCommandInteraction<CacheType>
 }
 export interface IButtonHandler extends IBaseCommandHandler {
 	interaction: ButtonInteraction<CacheType>
