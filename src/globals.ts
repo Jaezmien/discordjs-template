@@ -1,20 +1,21 @@
 import { ContextMenuCommandBuilder, SlashCommandBuilder } from '@discordjs/builders'
-import Collection from '@discordjs/collection'
 import {
+	AutocompleteInteraction,
 	ButtonInteraction,
 	CacheType,
 	Client,
+	Collection,
 	CommandInteraction,
+	ContextMenuCommandInteraction,
+	Interaction,
 	Message,
 	MessageReaction,
 	SelectMenuInteraction,
-	ContextMenuInteraction,
 	Snowflake,
 	User,
-	Interaction,
 } from 'discord.js'
-import { customAlphabet } from 'nanoid'
 import fs from 'fs'
+import { customAlphabet } from 'nanoid'
 import path from 'path/posix'
 
 export function get_avatar_url(i: Interaction) {
@@ -23,8 +24,8 @@ export function get_avatar_url(i: Interaction) {
 	if (i.user) return `https://cdn.discordapp.com/avatars/${i.user.id}/${i.user.avatar}.png`
 	throw 'Could not get avatar from "get_avatar_url"'
 }
-export function get_timestamp(i: Interaction, discord_epoch: boolean = true): Date {
-	return new Date(+i.id / 4194304 + (discord_epoch ? 1420070400000 : 0))
+export function get_timestamp(i: string, discord_epoch: boolean = true): Date {
+	return new Date(+i / 4194304 + (discord_epoch ? 1420070400000 : 0))
 }
 
 /** 📝 Ends with a slash */
@@ -43,7 +44,7 @@ export interface ISelectionHandler extends IBaseCommandHandler {
 	interaction: SelectMenuInteraction<CacheType>
 }
 export interface IMenuHandlerParameters extends IBaseCommandHandler {
-	interaction: ContextMenuInteraction<CacheType>
+	interaction: ContextMenuCommandInteraction<CacheType>
 }
 export interface IMessageHandler extends IBaseCommandHandler {
 	message: Message
@@ -60,7 +61,7 @@ export interface IMessageReactRemoveBulkHandler extends IBaseCommandHandler {
 	reactions: Collection<string | Snowflake, MessageReaction>
 }
 
-type Awaitable<T> = T | PromiseLike<T>
+export type Awaitable<T> = T | PromiseLike<T>
 export interface IPermission {
 	id: string
 	type: 'ROLE' | 'USER'
@@ -72,7 +73,8 @@ export interface ICommand {
 	Permissions?: IPermission[]
 }
 export interface ICommandHandler {
-	Command: (params: ICommandHandlerParameters) => Awaitable<any>
+	Command: (params: ICommandHandlerParameters) => Awaitable<void>
+	AutoComplete?: (params: AutocompleteInteraction) => Awaitable<void>
 }
 export interface IMenu {
 	Builder: ContextMenuCommandBuilder

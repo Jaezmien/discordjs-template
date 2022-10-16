@@ -3,15 +3,15 @@ import {
 	SlashCommandSubcommandBuilder,
 	SlashCommandSubcommandGroupBuilder,
 } from '@discordjs/builders'
-import path from 'path/posix'
 import { REST } from '@discordjs/rest'
 import { Routes } from 'discord-api-types/v9'
-import fs from 'fs'
+import { Client, GatewayIntentBits } from 'discord.js'
 import dotenv from 'dotenv'
-import { Client, Intents } from 'discord.js'
+import fs from 'fs'
+import path from 'path/posix'
 dotenv.config()
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] })
+const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 const expectedExtension = path.extname(__filename)
 const timeout = (secs: number) =>
 	new Promise<void>((res) => {

@@ -8,7 +8,7 @@ const Builder = new SlashCommandSubcommandBuilder()
 
 const Handler: ICommandHandler = {
 	Command({ client, interaction }) {
-		const user = interaction.options.getMember('user', true) as GuildMember
+		const user = interaction.options.getMember('user') as GuildMember
 		interaction.reply({
 			content: 'The username of the user is: ' + user.user.username,
 		})

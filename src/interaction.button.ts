@@ -1,5 +1,5 @@
-import { IButtonHandler } from './globals'
+import { Awaitable, IButtonHandler } from './globals'
 
-export default function ({ client, interaction }: IButtonHandler) {
+export default function ({ client, interaction }: IButtonHandler): Awaitable<void> {
 	// ...
 }

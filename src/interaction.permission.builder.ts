@@ -1,12 +1,12 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
-import path from 'path/posix'
-import fs from 'fs'
+import { Client, GatewayIntentBits } from 'discord.js'
 import dotenv from 'dotenv'
-import { Client, Intents } from 'discord.js'
+import fs from 'fs'
+import path from 'path/posix'
 import { IPermission } from './globals'
 dotenv.config()
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] })
+const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 
 const expectedExtension = path.extname(__filename)
 
@@ -61,9 +61,9 @@ const expectedExtension = path.extname(__filename)
 	}
 
 	console.log('Setting permissions...')
-	await client.guilds.cache.get(process.env.TEST_GUILD_ID!)?.commands.permissions.set({
+	/*await client.guilds.cache.get(process.env.TEST_GUILD_ID!)?.commands.permissions.set({
 		fullPermissions: perms,
-	})
+	})*/
 
 	client.destroy()
 })()

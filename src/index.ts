@@ -1,17 +1,15 @@
-import { Client, Intents, MessageReaction } from 'discord.js'
-import fs from 'fs'
+import { Client, Collection, GatewayIntentBits, MessageReaction } from 'discord.js'
 import dotenv from 'dotenv'
+import fs from 'fs'
 import path from 'path/posix'
-dotenv.config()
 import { create_user_error, ICommandHandler, IMenuHandler, initialize_folders } from './globals'
-import Collection from '@discordjs/collection'
-import MessageHandler from './message'
 import ButtonHandler from './interaction.button'
 import SelectionHandler from './interaction.selection'
+import MessageHandler from './message'
+dotenv.config()
 
 const client = new Client({
-	intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS],
-	// partials: ['MESSAGE', 'REACTION'],
+	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions],
 })
 
 initialize_folders()
@@ -106,7 +104,7 @@ initialize_folders()
 	client.on('interactionCreate', async (i) => {
 		if (!i) return
 
-		if (i.isCommand()) {
+		if (i.isChatInputCommand()) {
 			const commandName = [i.commandName, i.options.getSubcommandGroup(false), i.options.getSubcommand(false)]
 				.filter((x) => x?.trim())
 				.join(' ')
@@ -126,7 +124,7 @@ initialize_folders()
 			await ButtonHandler({ client, interaction: i })
 		} else if (i.isSelectMenu()) {
 			await SelectionHandler({ client, interaction: i })
-		} else if (i.isContextMenu()) {
+		} else if (i.isUserContextMenuCommand()) {
 			const commandName = i.commandName
 			if (!menuInteractions.get(commandName)) {
 				const msg = create_user_error(`Could not find a menu handler for the command: \`${commandName}\``)
@@ -138,6 +136,16 @@ initialize_folders()
 			}
 
 			await menuInteractions.get(commandName)!.Command({ client, interaction: i })
+		} else if (i.isAutocomplete()) {
+			const commandName = [i.commandName, i.options.getSubcommandGroup(false), i.options.getSubcommand(false)]
+				.filter((x) => x?.trim())
+				.join(' ')
+				.replace(/\\n/, '\n')
+				.trim()
+
+			if (slashInteractions.get(commandName) && slashInteractions.get(commandName)!.AutoComplete) {
+				slashInteractions.get(commandName)!.AutoComplete!(i)
+			}
 		}
 	})
 })()
