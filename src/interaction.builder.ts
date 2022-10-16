@@ -33,7 +33,7 @@ async function crawl_sub_command(
 			const Builder: SlashCommandSubcommandGroupBuilder = (
 				await import(`${commandPath}${fullPath}/${file}/[index]${expectedExtension}`)
 			).default
-			Builder.setName(file)
+			Builder.setName(path.basename(file))
 			await crawl_sub_command(commandPath, `${fullPath}/${file}`, Builder, true)
 			;(builder as SlashCommandBuilder).addSubcommandGroup(Builder)
 		} else {

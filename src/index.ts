@@ -2,7 +2,7 @@ import { Client, Collection, GatewayIntentBits, MessageReaction } from 'discord.
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path/posix'
-import { create_user_error, ICommandHandler, IMenuHandler, initialize_folders } from './globals'
+import { create_user_error, ICommandHandler, IMenuHandler, IModalHandler, initialize_folders } from './globals'
 import ButtonHandler from './interaction.button'
 import SelectionHandler from './interaction.selection'
 import MessageHandler from './message'
@@ -60,6 +60,7 @@ initialize_folders()
 	console.log('🔃 Loading interaction handlers...')
 	const slashInteractions = new Collection<string, ICommandHandler>()
 	const menuInteractions = new Collection<string, IMenuHandler>()
+	const modalInteractions = new Collection<string, IModalHandler>()
 
 	// Slash
 	{
@@ -97,6 +98,16 @@ initialize_folders()
 			for (const file of fs.readdirSync(commandPath)) {
 				const { Handler } = await import(commandPath + file)
 				menuInteractions.set(path.basename(file, path.extname(file)), Handler)
+			}
+		}
+	}
+	// Modals
+	{
+		const commandPath = path.join(__dirname, 'modals/')
+		if (fs.existsSync(commandPath)) {
+			for (const file of fs.readdirSync(commandPath)) {
+				const { ModalID, Handler } = await import(commandPath + file)
+				modalInteractions.set(ModalID, Handler)
 			}
 		}
 	}
@@ -145,6 +156,10 @@ initialize_folders()
 
 			if (slashInteractions.get(commandName) && slashInteractions.get(commandName)!.AutoComplete) {
 				slashInteractions.get(commandName)!.AutoComplete!(i)
+			}
+		} else if (i.isModalSubmit()) {
+			if (i.customId && modalInteractions.get(i.customId)) {
+				modalInteractions.get(i.customId)?.Command({ client, interaction: i })
 			}
 		}
 	})

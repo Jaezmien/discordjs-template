@@ -10,6 +10,7 @@ import {
 	Interaction,
 	Message,
 	MessageReaction,
+	ModalSubmitInteraction,
 	SelectMenuInteraction,
 	Snowflake,
 	User,
@@ -45,6 +46,9 @@ export interface ISelectionHandler extends IBaseCommandHandler {
 }
 export interface IMenuHandlerParameters extends IBaseCommandHandler {
 	interaction: ContextMenuCommandInteraction<CacheType>
+}
+export interface IModalSubmitHandlerParameters extends IBaseCommandHandler {
+	interaction: ModalSubmitInteraction<CacheType>
 }
 export interface IMessageHandler extends IBaseCommandHandler {
 	message: Message
@@ -83,6 +87,14 @@ export interface IMenu {
 }
 export interface IMenuHandler {
 	Command: (params: IMenuHandlerParameters) => Awaitable<any>
+}
+export interface IModal {
+	Builder: ContextMenuCommandBuilder
+	Handler: ICommandHandler
+	Permissions?: IPermission[]
+}
+export interface IModalHandler {
+	Command: (params: IModalSubmitHandlerParameters) => Awaitable<any>
 }
 
 export function initialize_folders() {
