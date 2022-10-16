@@ -24,8 +24,6 @@
 		"build:start": "tsc && node build/index.js",
 		"start": "node build/index.js",
 		"interaction:build": "node build/interaction.builder.js",
-		"interaction:build:all": "node build/interaction.builder.js --global",
-		"permission:build": "node build/interaction.permission.builder.js",
-		"permission:build:all": "node build/interaction.permission.builder.js --global"
+		"interaction:build:all": "node build/interaction.builder.js --global"
 	}
 }

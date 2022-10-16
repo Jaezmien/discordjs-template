@@ -66,15 +66,9 @@ export interface IMessageReactRemoveBulkHandler extends IBaseCommandHandler {
 }
 
 export type Awaitable<T> = T | PromiseLike<T>
-export interface IPermission {
-	id: string
-	type: 'ROLE' | 'USER'
-	permission: boolean
-}
 export interface ICommand {
 	Builder: SlashCommandBuilder
 	Handler: ICommandHandler
-	Permissions?: IPermission[]
 }
 export interface ICommandHandler {
 	Command: (params: ICommandHandlerParameters) => Awaitable<void>
@@ -83,7 +77,6 @@ export interface ICommandHandler {
 export interface IMenu {
 	Builder: ContextMenuCommandBuilder
 	Handler: ICommandHandler
-	Permissions?: IPermission[]
 }
 export interface IMenuHandler {
 	Command: (params: IMenuHandlerParameters) => Awaitable<any>
@@ -91,7 +84,6 @@ export interface IMenuHandler {
 export interface IModal {
 	Builder: ContextMenuCommandBuilder
 	Handler: ICommandHandler
-	Permissions?: IPermission[]
 }
 export interface IModalHandler {
 	Command: (params: IModalSubmitHandlerParameters) => Awaitable<any>
