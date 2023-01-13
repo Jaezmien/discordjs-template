@@ -1,5 +1,5 @@
 import { ContextMenuCommandBuilder } from '@discordjs/builders'
-import { IMenuHandler, IPermission } from '../globals'
+import { IMenuHandler } from '../globals'
 
 const Builder = new ContextMenuCommandBuilder().setName('Poke').setType(2)
 
