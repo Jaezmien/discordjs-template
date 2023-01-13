@@ -1,6 +1,12 @@
-import { IMessageEditHandler, IMessageHandler, IMessageReactHandler, IMessageReactRemoveBulkHandler } from './globals'
+import {
+	Awaitable,
+	IMessageEditHandler,
+	IMessageHandler,
+	IMessageReactHandler,
+	IMessageReactRemoveBulkHandler,
+} from './globals'
 
-function onCreate({ client, message }: IMessageHandler) {
+function onCreate({ client, message }: IMessageHandler): Awaitable<void> {
 	if (message.author.id === client.user?.id) return
 	if (message.author.bot) return
 
@@ -9,21 +15,21 @@ function onCreate({ client, message }: IMessageHandler) {
 	}
 }
 
-function onEdit({ client, message, old_message }: IMessageEditHandler) {
+function onEdit({ client, message, old_message }: IMessageEditHandler): Awaitable<void> {
 	// ...
 }
 
-function onDestroy({ client, message }: IMessageHandler) {
+function onDestroy({ client, message }: IMessageHandler): Awaitable<void> {
 	// ...
 }
 
-function onReactionCreate({ client, reaction, user }: IMessageReactHandler) {
+function onReactionCreate({ client, reaction, user }: IMessageReactHandler): Awaitable<void> {
 	// ...
 }
-function onReactionRemove({ client, reaction, user }: IMessageReactHandler) {
+function onReactionRemove({ client, reaction, user }: IMessageReactHandler): Awaitable<void> {
 	// ...
 }
-function onReactionRemoveBulk({ client, message, reactions }: IMessageReactRemoveBulkHandler) {
+function onReactionRemoveBulk({ client, message, reactions }: IMessageReactRemoveBulkHandler): Awaitable<void> {
 	// ...
 }
 
