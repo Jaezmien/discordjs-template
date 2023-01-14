@@ -166,7 +166,6 @@ initialize_folders()
 	})
 })()
 
-//do something when app is closing
 process.on('exit', async () => {
 	client.destroy()
 	await Database.close()
