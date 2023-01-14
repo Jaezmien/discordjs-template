@@ -97,8 +97,18 @@ export function initialize_folders() {
 	})
 }
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 12)
-export function create_user_error(message: string): string {
+export function create_user_error(error: any): string {
 	const uniqueID = nanoid()
+
+	let message = ''
+	if (typeof error === 'string') {
+		message = error
+	} else if (error instanceof Error) {
+		message = (error.name + '\n' + error.message + '\n' + error.stack).trim()
+	} else {
+		message = JSON.stringify(error, null, '\t')
+	}
+
 	fs.writeFileSync(path.join(ROOT_PATH, 'errors/', uniqueID + '.txt'), message)
 	return '🔥 An error has occured! Please report this to the bot moderator.\n\n**Error UID:** `' + uniqueID + '`'
 }
