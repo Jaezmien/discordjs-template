@@ -2,6 +2,7 @@ import { Client, Collection, GatewayIntentBits, MessageReaction } from 'discord.
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path/posix'
+import { Database } from './database'
 import { create_user_error, ICommandHandler, IMenuHandler, IModalHandler, initialize_folders } from './globals'
 import ButtonHandler from './interaction.button'
 import SelectionHandler from './interaction.selection'
@@ -165,11 +166,25 @@ initialize_folders()
 	})
 })()
 
-//
-
-client.once('ready', () => {
-	console.log('👍 Bot is active!')
+//do something when app is closing
+process.on('exit', async () => {
+	client.destroy()
+	await Database.close()
 })
 
-console.log('🔃 Logging in...')
-client.login(process.env.BOT_TOKEN)
+console.log('📂 Startinf database...')
+Database.authenticate()
+	.then(async () => {
+		await Database.query('PRAGMA journal_mode = WAL;') // Used for SQLite
+
+		client.once('ready', () => {
+			console.log('👍 Bot is active!')
+		})
+
+		console.log('🔃 Logging in...')
+		client.login(process.env.BOT_TOKEN)
+	})
+	.catch((err) => {
+		console.error('💥 An error has occured while trying to test database connection!')
+		console.error(err)
+	})
