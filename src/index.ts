@@ -172,7 +172,7 @@ process.on('exit', async () => {
 	await Database.close()
 })
 
-console.log('📂 Startinf database...')
+console.log('📂 Starting database...')
 Database.authenticate()
 	.then(async () => {
 		await Database.query('PRAGMA journal_mode = WAL;') // Used for SQLite
