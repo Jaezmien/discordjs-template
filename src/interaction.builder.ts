@@ -103,10 +103,10 @@ async function crawl_sub_command(
 
 			try {
 				if (process.argv.includes('--global')) {
-					await rest.delete(Routes.applicationCommand(process.env.GUILD_ID!, cmd.id))
+					await rest.delete(Routes.applicationCommand(client.user!.id, cmd.id))
 				} else {
 					await rest.delete(
-						Routes.applicationGuildCommand(process.env.GUILD_ID!, process.env.TEST_GUILD_ID!, cmd.id)
+						Routes.applicationGuildCommand(client.user!.id, process.env.TEST_GUILD_ID!, cmd.id)
 					)
 				}
 			} catch (error) {
@@ -122,11 +122,11 @@ async function crawl_sub_command(
 	interactions = interactions.map((i) => i.toJSON())
 	try {
 		if (process.argv.includes('--global')) {
-			await rest.put(Routes.applicationCommands(process.env.GUILD_ID!), {
+			await rest.put(Routes.applicationCommands(client.user!.id), {
 				body: interactions,
 			})
 		} else {
-			await rest.put(Routes.applicationGuildCommands(process.env.GUILD_ID!, process.env.TEST_GUILD_ID!), {
+			await rest.put(Routes.applicationGuildCommands(client.user!.id, process.env.TEST_GUILD_ID!), {
 				body: interactions,
 			})
 		}
