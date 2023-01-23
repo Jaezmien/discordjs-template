@@ -169,10 +169,16 @@ register_interaction_handlers().catch((err) => {
 	throw err
 })
 
-process.on('exit', async () => {
+async function stop_bot() {
+	client.user?.setStatus('invisible')
 	client.destroy()
+
 	await Database.close()
-})
+}
+
+process.on('exit', stop_bot)
+process.addListener('SIGINT', stop_bot)
+process.addListener('SIGTERM', stop_bot)
 
 console.log('📂 Starting database...')
 Database.authenticate()
@@ -181,6 +187,13 @@ Database.authenticate()
 
 		client.once('ready', () => {
 			console.log('👍 Bot is active!')
+		})
+
+		client.on('error', async (err) => {
+			console.log('💥 An error has occured within the Discord.JS Client!')
+			console.error(err)
+
+			await stop_bot()
 		})
 
 		console.log('🔃 Logging in...')
