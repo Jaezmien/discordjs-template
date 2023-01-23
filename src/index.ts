@@ -1,9 +1,16 @@
 import { Client, Collection, GatewayIntentBits, MessageReaction } from 'discord.js'
 import dotenv from 'dotenv'
-import fs from 'fs'
 import path from 'path/posix'
 import { Database } from './database'
-import { create_user_error, ICommandHandler, IMenuHandler, IModalHandler, initialize_folders } from './globals'
+import {
+	CrawledPath,
+	crawl_path,
+	create_user_error,
+	ICommandHandler,
+	IMenuHandler,
+	IModalHandler,
+	initialize_folders,
+} from './globals'
 import ButtonHandler from './interaction.button'
 import SelectionHandler from './interaction.selection'
 import MessageHandler from './message'
@@ -56,62 +63,54 @@ initialize_folders()
 	})
 }
 
-//
-;(async () => {
+async function register_interaction_handlers() {
 	console.log('🔃 Loading interaction handlers...')
 	const slashInteractions = new Collection<string, ICommandHandler>()
 	const menuInteractions = new Collection<string, IMenuHandler>()
 	const modalInteractions = new Collection<string, IModalHandler>()
 
+	function remove_index_paths(paths: CrawledPath[]) {
+		return paths.filter((p) => !(p.depth > 0 && path.basename(p.path, path.extname(p.path)) === '[index]'))
+	}
+	async function import_paths(
+		paths: CrawledPath[],
+		collection: Collection<string, any>,
+		on_hit: (path: string) => Promise<[any] | [string, any]>
+	) {
+		for (const p of paths) {
+			const selected = await on_hit(p.path)
+
+			if (selected.length === 1) {
+				collection.set(p.name, selected[0])
+			} else {
+				collection.set(selected[0], selected[1])
+			}
+		}
+	}
+
 	// Slash
-	{
-		const commandPath = path.join(__dirname, 'commands/')
-		if (fs.existsSync(commandPath)) {
-			for (const file of fs.readdirSync(commandPath)) {
-				if (!path.extname(file)) {
-					for (const subFile of fs.readdirSync(commandPath + file)) {
-						if (path.basename(subFile, path.extname(subFile)) === '[index]') continue
-						if (!path.extname(subFile)) {
-							for (const subSubFile of fs.readdirSync(commandPath + file + '/' + subFile)) {
-								if (path.basename(subSubFile, path.extname(subSubFile)) === '[index]') continue
-								const { Handler } = await import(commandPath + file + '/' + subFile + '/' + subSubFile)
-								slashInteractions.set(
-									file + ' ' + subFile + ' ' + path.basename(subSubFile, path.extname(subSubFile)),
-									Handler
-								)
-							}
-						} else {
-							const { Handler } = await import(commandPath + file + '/' + subFile)
-							slashInteractions.set(file + ' ' + path.basename(subFile, path.extname(subFile)), Handler)
-						}
-					}
-				} else {
-					const { Handler } = await import(commandPath + file)
-					slashInteractions.set(path.basename(file, path.extname(file)), Handler)
-				}
-			}
-		}
-	}
+	await import_paths(
+		remove_index_paths(await crawl_path(path.join(__dirname, 'commands/'), 2)),
+		slashInteractions,
+		async (p) => [(await import(p)).Handler]
+	)
+
 	// Menu
-	{
-		const commandPath = path.join(__dirname, 'menus/')
-		if (fs.existsSync(commandPath)) {
-			for (const file of fs.readdirSync(commandPath)) {
-				const { Handler } = await import(commandPath + file)
-				menuInteractions.set(path.basename(file, path.extname(file)), Handler)
-			}
-		}
-	}
+	await import_paths(
+		remove_index_paths(await crawl_path(path.join(__dirname, 'menus/'), 1)),
+		menuInteractions,
+		async (p) => [(await import(p)).Handler]
+	)
+
 	// Modals
-	{
-		const commandPath = path.join(__dirname, 'modals/')
-		if (fs.existsSync(commandPath)) {
-			for (const file of fs.readdirSync(commandPath)) {
-				const { ModalID, Handler } = await import(commandPath + file)
-				modalInteractions.set(ModalID, Handler)
-			}
+	await import_paths(
+		remove_index_paths(await crawl_path(path.join(__dirname, 'modals/'), 1)),
+		modalInteractions,
+		async (p) => {
+			const { ModalID, Handler } = await import(p)
+			return [ModalID, Handler]
 		}
-	}
+	)
 
 	client.on('interactionCreate', async (i) => {
 		if (!i) return
@@ -164,7 +163,11 @@ initialize_folders()
 			}
 		}
 	})
-})()
+}
+
+register_interaction_handlers().catch((err) => {
+	throw err
+})
 
 process.on('exit', async () => {
 	client.destroy()

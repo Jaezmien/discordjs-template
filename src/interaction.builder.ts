@@ -7,70 +7,100 @@ import { REST } from '@discordjs/rest'
 import { Routes } from 'discord-api-types/v9'
 import { Client, GatewayIntentBits } from 'discord.js'
 import dotenv from 'dotenv'
-import fs from 'fs'
 import path from 'path/posix'
+import { CrawledPath, crawl_path } from './globals'
 dotenv.config()
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
-const expectedExtension = path.extname(__filename)
 const timeout = (secs: number) =>
 	new Promise<void>((res) => {
 		setTimeout(res, secs * 1000)
 	})
 
-async function crawl_sub_command(
-	commandPath: string,
-	fullPath: string,
-	builder: SlashCommandBuilder | SlashCommandSubcommandGroupBuilder,
-	once: boolean = false
-) {
-	for (const file of fs.readdirSync(commandPath + fullPath)) {
-		if (path.basename(file, path.extname(file)) === '[index]') continue
-		if (!path.extname(file)) {
-			if (once) throw 'Invalid interaction!'
-			if (!fs.existsSync(`${commandPath}${fullPath}/${file}/[index]${expectedExtension}`))
-				throw 'Invalid interaction subcommand group!'
-			const Builder: SlashCommandSubcommandGroupBuilder = (
-				await import(`${commandPath}${fullPath}/${file}/[index]${expectedExtension}`)
-			).default
-			Builder.setName(path.basename(file))
-			await crawl_sub_command(commandPath, `${fullPath}/${file}`, Builder, true)
-			;(builder as SlashCommandBuilder).addSubcommandGroup(Builder)
-		} else {
-			const { Builder }: { Builder: SlashCommandSubcommandBuilder } = await import(
-				`${commandPath}${fullPath}/${file}`
-			)
-			Builder.setName(path.basename(file, path.extname(file)))
-			builder.addSubcommand(Builder)
+async function main() {
+	let interactions: any[] = []
+
+	function verify_commands(commands: CrawledPath[]) {
+		const p_lookup = new Map<string, number>()
+		for (const p of commands) {
+			if (p.depth == 0) continue
+
+			const p_split = p.name.split(' ')
+			const p_name = p_split.pop()!
+			const p_key = p_split.join(' ')
+
+			if (p_name !== '[index]' && !p_lookup.has(p_key)) throw `Invalid interaction subcommand (${p.name})`
+			p_lookup.set(p_key, (p_lookup.get(p_key) ?? 0) + 1)
+
+			if (p.depth > 2) throw `Invalid interaction subcommand group (${p.name})`
+		}
+
+		if (Array.from(p_lookup.keys()).some((k) => p_lookup.get(k) == 1)) {
+			const k = Array.from(p_lookup.keys()).find((k) => p_lookup.get(k) == 1)
+			throw `Interaction subcommand (${k}) is empty`
 		}
 	}
-}
 
-;(async () => {
-	let interactions: any[] = []
-	for (const paths of ['commands/', 'menus/']) {
-		const commandPath = path.join(__dirname, paths)
-		if (!fs.existsSync(commandPath)) continue
-		for (const file of fs.readdirSync(commandPath)) {
-			try {
-				if (!path.extname(file)) {
-					if (paths === 'menus/') throw 'Cannot create subcommand for context menus'
-					if (!fs.existsSync(`${commandPath}${file}/[index]${expectedExtension}`))
-						throw 'Invalid interaction subcommand'
-					const Builder = (await import(`${commandPath}${file}/[index]${expectedExtension}`)).default
-					Builder.setName(file)
-					await crawl_sub_command(commandPath, file, Builder)
-					interactions.push(Builder)
-				} else {
-					const { Builder }: { Builder: SlashCommandBuilder } = await import(commandPath + file)
-					Builder.setName(path.basename(file, path.extname(file)))
-					interactions.push(Builder)
-				}
-			} catch (err) {
-				console.error('Error while trying to load ' + file)
-				console.error(err)
-			}
+	const command_interactions = (await crawl_path(path.join(__dirname, 'commands/'))).sort((a, b) =>
+		a.name.localeCompare(b.name)
+	)
+	verify_commands(command_interactions)
+	for (let i = 0; i < command_interactions.length; i++) {
+		let p = command_interactions[i]
+
+		if (p.depth === 0) {
+			const { Builder }: { Builder: SlashCommandBuilder } = await import(p.path)
+			Builder.setName(path.basename(p.path, path.extname(p.path)))
+			interactions.push(Builder)
+
+			continue
 		}
+
+		const parentBuilder: SlashCommandBuilder = (await import(p.path)).default
+		parentBuilder.setName(p.name.split(' ').slice(0, -1).join(' ').trim())
+
+		const interaction_key = p.name.split(' ')[0]
+		p = command_interactions[++i] // move to first command
+		while (p.name.startsWith(`${interaction_key} `)) {
+			if (p.name.split(' ').length == 2) {
+				const { Builder: childBuilder }: { Builder: SlashCommandSubcommandBuilder } = await import(p.path)
+				childBuilder.setName(p.name.split(' ').splice(-1).join(' ').trim())
+				parentBuilder.addSubcommand(childBuilder)
+			} else {
+				const Builder: SlashCommandSubcommandGroupBuilder = (await import(p.path)).default
+				Builder.setName(p.name.split(' ').splice(1, 1).join(' '))
+
+				const child_key = p.name.split(' ').splice(0, 2).join(' ')
+				p = command_interactions[++i] // move to first subcommand command
+				while (p.name.startsWith(`${child_key} `)) {
+					const { Builder: childBuilder }: { Builder: SlashCommandSubcommandBuilder } = await import(p.path)
+					childBuilder.setName(p.name.split(' ').splice(-1).join(' ').trim())
+					Builder.addSubcommand(childBuilder)
+
+					p = command_interactions[++i]
+				}
+				i--
+
+				parentBuilder.addSubcommandGroup(Builder)
+			}
+
+			p = command_interactions[++i]
+		}
+		i--
+
+		interactions.push(parentBuilder)
+	}
+
+	const menu_interactions = (await crawl_path(path.join(__dirname, 'menus/'))).sort((a, b) =>
+		a.name.localeCompare(b.name)
+	)
+	if (menu_interactions.some((p) => p.depth > 1)) {
+		throw `Cannot create subcommand for context menus (${menu_interactions.find((p) => p.depth > 1)!.name})`
+	}
+	for (const p of menu_interactions) {
+		const { Builder }: { Builder: SlashCommandBuilder } = await import(p.path)
+		Builder.setName(path.basename(p.path, path.extname(p.path)))
+		interactions.push(Builder)
 	}
 
 	const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN!)
@@ -132,8 +162,10 @@ async function crawl_sub_command(
 		}
 	} catch (error) {
 		console.error(error)
-		console.log(interactions)
+		console.log(JSON.stringify(interactions, null, ' '))
 	}
 
 	client.destroy()
-})()
+}
+
+main().catch(console.error)

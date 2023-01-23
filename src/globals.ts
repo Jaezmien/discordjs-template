@@ -112,3 +112,44 @@ export function create_user_error(error: any): string {
 	fs.writeFileSync(path.join(ROOT_PATH, 'errors/', uniqueID + '.txt'), message)
 	return '🔥 An error has occured! Please report this to the bot moderator.\n\n**Error UID:** `' + uniqueID + '`'
 }
+
+export interface CrawledPath {
+	name: string
+	path: string
+	depth: number
+}
+
+export async function crawl_path(dir: string, max_depth?: number) {
+	const paths: CrawledPath[] = []
+
+	const crawl_paths: string[] = [dir]
+	const depths: Map<string, number> = new Map()
+
+	while (crawl_paths.length) {
+		const p = crawl_paths.shift()
+		if (!p || !fs.existsSync(p)) continue
+
+		const depth = depths.get(p) ?? 0
+
+		for (const content of fs.readdirSync(p)) {
+			const new_path = path.join(p, content)
+
+			if (path.extname(content)) {
+				paths.push({
+					name: [...p.substring(dir.length).split(/[\/\\]/g), path.basename(content, path.extname(content))]
+						.filter((x) => x)
+						.join(' '),
+					path: new_path,
+					depth: depth,
+				})
+			} else {
+				if (max_depth && depth + 1 > max_depth) continue
+
+				depths.set(new_path, depth + 1)
+				crawl_paths.push(new_path)
+			}
+		}
+	}
+
+	return paths
+}
