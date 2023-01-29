@@ -169,11 +169,15 @@ register_interaction_handlers().catch((err) => {
 	throw err
 })
 
+let database_open = false
 async function stop_bot() {
 	client.user?.setStatus('invisible')
 	client.destroy()
 
-	await Database.close()
+	if (database_open) {
+		database_open = false
+		await Database.close()
+	}
 }
 
 process.on('exit', stop_bot)
@@ -183,6 +187,7 @@ process.addListener('SIGTERM', stop_bot)
 console.log('📂 Starting database...')
 Database.authenticate()
 	.then(async () => {
+		database_open = true
 		await Database.query('PRAGMA journal_mode = WAL;') // Used for SQLite
 
 		client.once('ready', () => {
