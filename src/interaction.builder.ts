@@ -61,7 +61,7 @@ async function main() {
 
 		const interaction_key = p.name.split(' ')[0]
 		p = command_interactions[++i] // move to first command
-		while (p.name.startsWith(`${interaction_key} `)) {
+		while (p && p.name.startsWith(`${interaction_key} `)) {
 			if (p.name.split(' ').length == 2) {
 				const { Builder: childBuilder }: { Builder: SlashCommandSubcommandBuilder } = await import(p.path)
 				childBuilder.setName(p.name.split(' ').splice(-1).join(' ').trim())
