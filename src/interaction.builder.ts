@@ -120,9 +120,8 @@ async function main() {
 		await commands.fetch({})
 
 		console.log('Removing unused interactions...')
-		const unused = commands.cache.filter((val) => {
-			return !interactions.find((i) => val.name === i.name && val.description === i.description)
-		})
+		// Discord will override similar interaction names
+		const unused = commands.cache.filter((val) => !interactions.find((i) => i.name === val.name))
 
 		for (const key of Array.from(unused.keys())) {
 			const cmd = unused.get(key)
